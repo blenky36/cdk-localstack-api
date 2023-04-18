@@ -1,25 +1,23 @@
 import { App, Stack } from 'aws-cdk-lib'
-import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway'
-import { Code, Runtime } from 'aws-cdk-lib/aws-lambda'
+import { LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway'
+import { Runtime } from 'aws-cdk-lib/aws-lambda'
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
-import { Function } from 'aws-cdk-lib/aws-lambda'
 
 const serverlessApiStack = (app: App) => {
-    const stack = new Stack(app, 'LambdaApiHelloWorld', { stackName: "LambdaApiHelloWorld" })
+    const stack = new Stack(app, 'LambdaApiHelloWorldStack', { stackName: "LambdaApiHelloWorldStack" })
 
-    const tsFunction = new NodejsFunction(stack, 'HelloWorldTSFunction', {
+    const lambdaFunction = new NodejsFunction(stack, 'HelloWorldFunction', {
         entry: 'helloWorld.ts',
         runtime: Runtime.NODEJS_16_X,
     })
 
-    const jsFunction = new Function(stack, 'HelloWorldJSFunction', {
-        runtime: Runtime.NODEJS_16_X,
-        handler: "index.handler",
-        code: Code.fromAsset("./helloWorld")
-    })
+    const api = new RestApi(stack, "RestApi", {});
 
-    new LambdaRestApi(stack, 'LambdaHelloWorldTSAPI', { handler: tsFunction })
-    new LambdaRestApi(stack, 'LambdaHelloWorlJSAPI', { handler: jsFunction })
+    const helloWorldIntegration = new LambdaIntegration(lambdaFunction, {
+        requestTemplates: { "application/json": '{ "statusCode": "200" }' }
+    });
+
+    api.root.addMethod("GET", helloWorldIntegration);
 }
 
 const app = new App()
